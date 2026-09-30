@@ -48,7 +48,7 @@ class TestEnableQuantCommunications(CustomTestCase):
                 "--enable-quant-communications",
                 "--log-level",
                 "info",
-                "mamba-ssm-dtype",
+                "--mamba-ssm-dtype",
                 "bfloat16",
             ],
             env=cls.env,
