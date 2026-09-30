@@ -30,7 +30,7 @@ class TestEnableQuantCommunications(CustomTestCase):
         cls.base_url = DEFAULT_URL_FOR_TEST
         cls.env = {
             **os.environ,
-            "SGLANG_NPU_FORWARD_NATIVE_GEMMA_RMS_NORM": 1,
+            "SGLANG_NPU_FORWARD_NATIVE_GEMMA_RMS_NORM": "1",
         }
         cls.process = popen_launch_server(
             cls.model,
