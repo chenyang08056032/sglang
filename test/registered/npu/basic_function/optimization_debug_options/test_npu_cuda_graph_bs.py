@@ -26,6 +26,9 @@ _LAUNCH_TIMEOUT = DEFAULT_TIMEOUT_FOR_SERVER_LAUNCH
 _DECODE_RE = re.compile(r"Capture target decode.*begin.*bs=\[([^\]]+)\]")
 _PREFILL_RE = re.compile(r"Capture target prefill.*begin.*num_tokens=\[([^\]]+)\]")
 
+# Local ShareGPT copy (see run_npu_testcase.sh); avoids HF hub download
+SHAREGPT_DATASET_PATH = "/tmp/ShareGPT_V3_unfiltered_cleaned_split.json"
+
 
 def _read_log(path):
     """Read log file content"""
@@ -58,6 +61,7 @@ def _run_bench(base_url):
         base_url=base_url,
         backend="sglang",
         dataset_name="random",
+        dataset_path=SHAREGPT_DATASET_PATH,
         tokenizer=MODEL,
         num_prompts=10,
         random_input_len=256,
