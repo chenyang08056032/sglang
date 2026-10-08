@@ -1,3 +1,4 @@
+import os
 import unittest
 
 from sglang.test.ascend.output_capturer import OutputCapturer
@@ -20,7 +21,7 @@ class TestAscendMMAttentionBackend(TestVLMModels):
     mmmu_accuracy = 0.2
     other_args = [
         "--trust-remote-code",
-        "--cuda-graph-max-bs",
+        "--cuda-graph-max-bs-decode",
         "32",
         "--enable-multimodal",
         "--mem-fraction-static",
@@ -35,6 +36,7 @@ class TestAscendMMAttentionBackend(TestVLMModels):
         "--mm-attention-backend",
         mm_attention_backend,
     ]
+    os.environ["SGLANG_NPU_FORWARD_NATIVE_GEMMA_RMS_NORM"] = "1"
 
     @classmethod
     def setUpClass(cls):

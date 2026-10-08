@@ -1,3 +1,4 @@
+import os
 import unittest
 
 import requests
@@ -39,11 +40,16 @@ class TestLoraBackend(CustomTestCase):
             "--lora-path",
             f"lora_a={QWEN3_5_4B_NEO4J_TEXT2CYPHER_LORA_PATH}",
         ]
+        cls.env = {
+            **os.environ,
+            "SGLANG_NPU_FORWARD_NATIVE_GEMMA_RMS_NORM": "1",
+        }
         cls.process = popen_launch_server(
             QWEN3_5_4B_WEIGHTS_PATH,
             DEFAULT_URL_FOR_TEST,
             timeout=DEFAULT_TIMEOUT_FOR_SERVER_LAUNCH,
             other_args=other_args,
+            env=cls.env,
         )
 
     @classmethod
