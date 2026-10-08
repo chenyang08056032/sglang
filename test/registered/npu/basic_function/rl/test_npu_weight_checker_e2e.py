@@ -6,7 +6,9 @@ test/registered/unit/utils/test_weight_checker.py cover the in-module
 logic; this file is the thin integration cover plus interaction with
 update_weights_from_tensor."""
 
+import json
 import os
+import shutil
 import tempfile
 import unittest
 from typing import List, Tuple
@@ -15,6 +17,7 @@ import requests
 import torch
 
 from sglang.srt.utils import MultiprocessingSerializer, kill_process_tree
+from sglang.srt.utils.model_file_verifier import generate_checksums
 from sglang.test.ascend.test_ascend_utils import QWEN3_0_6B_WEIGHTS_PATH
 from sglang.test.ci.ci_register import register_npu_ci
 from sglang.test.test_utils import (
@@ -53,6 +56,12 @@ class TestWeightCheckerE2E(CustomTestCase):
     @classmethod
     def setUpClass(cls):
         cls.url = DEFAULT_URL_FOR_TEST
+        # Build the checksum manifest from the local model dir so the whole
+        # case runs offline: passing an HF repo id would make the server fetch
+        # file metadata from huggingface.co, unreachable on CI runners.
+        cls.checksum_dir = tempfile.mkdtemp()
+        cls.checksum_file = os.path.join(cls.checksum_dir, "checksums.json")
+        generate_checksums(source=_MODEL_NAME, output_path=cls.checksum_file)
         # --mem-fraction-static 0.7 leaves enough free NPU memory for
         # _check_tensors's CPU->NPU round trip: snapshot lives on CPU, then
         # _compare moves each snapshot tensor back to NPU for byte equality.
@@ -75,7 +84,7 @@ class TestWeightCheckerE2E(CustomTestCase):
                 "ascend",
                 "--disable-cuda-graph",
                 "--model-checksum",
-                "Qwen/Qwen3-0.6B",
+                cls.checksum_file,
             ],
             return_stdout_stderr=(cls.out_file, cls.err_file),
         )
@@ -87,6 +96,7 @@ class TestWeightCheckerE2E(CustomTestCase):
         cls.err_file.close()
         os.unlink(cls.out_file.name)
         os.unlink(cls.err_file.name)
+        shutil.rmtree(cls.checksum_dir, ignore_errors=True)
 
     def _post(self, action: str) -> requests.Response:
         # checksum action iterates over all model weights on NPU and is much
@@ -244,10 +254,15 @@ class TestWeightCheckerE2E(CustomTestCase):
         self.assertIn("max_abs_err", body["message"])
 
     def test_model_checksum(self):
-        # Model Weight File Verification
+        # Model Weight File Verification. File count comes from the manifest
+        # we generated, so the assertion stays exact regardless of repo layout.
         self.out_file.seek(0)
         content = self.out_file.read()
-        self.assertIn("[ModelFileVerifier] All 7 files verified successfully.", content)
+        with open(self.checksum_file) as f:
+            n_files = len(json.load(f)["files"])
+        self.assertIn(
+            f"[ModelFileVerifier] All {n_files} files verified successfully.", content
+        )
 
 
 if __name__ == "__main__":
