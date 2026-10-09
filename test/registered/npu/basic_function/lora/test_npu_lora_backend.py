@@ -39,6 +39,8 @@ class TestLoraBackend(CustomTestCase):
             "--disable-cuda-graph",
             "--lora-path",
             f"lora_a={QWEN3_5_4B_NEO4J_TEXT2CYPHER_LORA_PATH}",
+            "--mamba-ssm-dtype",
+            "bfloat16",
         ]
         cls.env = {
             **os.environ,
